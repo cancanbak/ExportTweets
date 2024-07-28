@@ -1,4 +1,8 @@
+import sys
+sys.path.append('/home/ec2-user/.local/lib/python3.11/site-packages')
+
 import snscrape.modules.twitter as sntwitter
+
 import csv
 
 def scrape_tweets(usernames, limit=100):
