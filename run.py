@@ -1,34 +1,29 @@
-import asyncio
+import snscrape.modules.twitter as sntwitter
 import csv
-from twscrape import API, gather
 
-async def fetch_tweets(username):
-    api = API()
-    user = await api.user_by_login(username)
-    tweets = await gather(api.user_tweets(user.id, limit=100))
-    return tweets
-
-async def main(usernames):
+def scrape_tweets(usernames, limit=100):
     all_tweets = []
     for username in usernames:
-        tweets = await fetch_tweets(username)
-        for tweet in tweets:
+        for i, tweet in enumerate(sntwitter.TwitterUserScraper(username).get_items()):
+            if i >= limit:
+                break
             all_tweets.append({
                 "username": username,
                 "date": tweet.date,
                 "content": tweet.content,
-                "retweets": tweet.retweets,
-                "likes": tweet.likes,
-                "replies": tweet.replies,
-                "hashtags": tweet.hashtags,
+                "retweets": tweet.retweetCount,
+                "likes": tweet.likeCount,
+                "replies": tweet.replyCount,
+                "hashtags": [hashtag.lower() for hashtag in tweet.hashtags] if tweet.hashtags else [],
                 "link": f"https://twitter.com/{username}/status/{tweet.id}"
             })
+    return all_tweets
 
-    # CSV'ye yazma
-    with open('tweets.csv', mode='w', newline='', encoding='utf-8') as file:
+def export_to_csv(tweets, filename='tweets.csv'):
+    with open(filename, mode='w', newline='', encoding='utf-8') as file:
         writer = csv.DictWriter(file, fieldnames=["username", "date", "content", "retweets", "likes", "replies", "hashtags", "link"])
         writer.writeheader()
-        for tweet in all_tweets:
+        for tweet in tweets:
             writer.writerow(tweet)
 
 if __name__ == "__main__":
@@ -38,4 +33,5 @@ if __name__ == "__main__":
         "ElonMuskAOC", "greg16676935420", "MrBeast", "BillyM2k", "tier10k", "coinmarketcap", "100trillionUSD",
         "MMCrypto", "BTC_Archive", "cz_binance"
     ]
-    asyncio.run(main(usernames))
+    tweets = scrape_tweets(usernames)
+    export_to_csv(tweets)
