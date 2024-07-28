@@ -1,14 +1,17 @@
-import sys
-sys.path.append('/home/ec2-user/.local/lib/python3.11/site-packages')
-
 import snscrape.modules.twitter as sntwitter
-
+import requests
 import csv
+
+class MyTwitterScraper(sntwitter.TwitterUserScraper):
+    def _request(self, *args, **kwargs):
+        kwargs['verify'] = False
+        return super()._request(*args, **kwargs)
 
 def scrape_tweets(usernames, limit=100):
     all_tweets = []
     for username in usernames:
-        for i, tweet in enumerate(sntwitter.TwitterUserScraper(username).get_items()):
+        scraper = MyTwitterScraper(username)
+        for i, tweet in enumerate(scraper.get_items()):
             if i >= limit:
                 break
             all_tweets.append({
